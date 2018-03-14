@@ -1,0 +1,88 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 d/mnt/hgfs/VSN/Labos/labo2/code/comp
+Ealu
+Z1 w1520867575
+Z2 DPx4 ieee 11 numeric_std 0 22 :ASDNFgHXf_ih3J@9F3Ze1
+Z3 DPx3 std 6 textio 0 22 zE1`LPoLg^DX3Oz^4Fj1K3
+Z4 DPx4 ieee 14 std_logic_1164 0 22 eNV`TJ_GofJTzYa?f<@Oe1
+R0
+Z5 8../src/alu.vhd
+Z6 F../src/alu.vhd
+l0
+L19
+VZmnXAmn:8NjMcZEZTdZzM0
+!s100 hQV2QCE4^n0FMg;:mHg7H2
+Z7 OL;C;10.5c_2;63
+32
+Z8 !s110 1520872630
+!i10b 1
+Z9 !s108 1520872630.000000
+Z10 !s90 -reportprogress|300|../src/alu.vhd|
+Z11 !s107 ../src/alu.vhd|
+!i113 0
+Z12 tExplicit 1 CvgOpt 0
+Abehave
+R2
+R3
+R4
+Z13 DEx4 work 3 alu 0 22 ZmnXAmn:8NjMcZEZTdZzM0
+l40
+L34
+Z14 V2L^[EH:=ePCC9R[7_61[_0
+Z15 !s100 Ih4SiSRd7JbOFOV[0YYXR2
+R7
+32
+R8
+!i10b 1
+R9
+R10
+R11
+!i113 0
+R12
+Ealu_tb
+Z16 w1520862212
+R2
+R3
+R4
+R0
+Z17 8../src_tb/alu_tb.vhd
+Z18 F../src_tb/alu_tb.vhd
+l0
+L46
+VibAGAhcHPFHGnDhGh>idi1
+!s100 lHe:e3Y=E=YB7lTANzcI@3
+R7
+32
+Z19 !s110 1520862215
+!i10b 1
+Z20 !s108 1520862215.000000
+Z21 !s90 -reportprogress|300|../src_tb/alu_tb.vhd|
+Z22 !s107 ../src_tb/alu_tb.vhd|
+!i113 0
+R12
+Atestbench
+R2
+R3
+R4
+DEx4 work 6 alu_tb 0 22 ibAGAhcHPFHGnDhGh>idi1
+32
+R19
+l80
+L55
+Vf1X9<GRPBN`bKEO541ea61
+!s100 o8;ACkzIdmF8i@BUd_c933
+R7
+!i10b 1
+R20
+R21
+R22
+!i113 0
+R12
