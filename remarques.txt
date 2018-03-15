@@ -1,0 +1,7 @@
+1. commande: python3 gen_simple_vhdl_tb.py -t template_combi1 -i /mnt/hgfs/VSN/Labos/labo2/code/src/alu.vhd -d /mnt/hgfs/VSN/Labos/labo2/code
+
+2. vsim -do ../scripts/sim.do
+
+3.  add wave -expand -group Stimuli *_sti
+    add wave -expand -group Observ *_sti
+    add wave -expand -group Signaux *_sti
