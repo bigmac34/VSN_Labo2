@@ -1,4 +1,4 @@
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- HEIG-VD
 -- Haute Ecole d'Ingenerie et de Gestion du Canton de Vaud
 -- School of Business and Engineering in Canton de Vaud
