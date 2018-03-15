@@ -38,11 +38,11 @@ context project_lib.project_ctx;
 
 entity alu_tb is
     generic (
-        TESTCASE : integer := 0;
-        SIZE     : integer := 8;
-        ERRNO    : integer := 0;
-        C_SEED1    : positive := 3145;
-        C_SEED2    : positive := 1123
+        TESTCASE 	: integer := 0;
+	    SIZE     	: integer := 8;
+        ERRNO		: integer := 0;
+        C_SEED1		: positive := 3145;
+        C_SEED2		: positive := 1123
     );
 
 end alu_tb;
@@ -90,8 +90,8 @@ begin
     stimulus_proc: process is
 
         -- Pour l'aleatoire
-        variable seed1: positive := 1;
-        variable seed2: positive := 2;
+        variable seed1: positive := C_SEED1;
+        variable seed2: positive := C_SEED2;
         variable rand: real;
         variable int_rand: integer;
         variable stim: std_logic_vector(SIZE-1 downto 0);
@@ -110,85 +110,167 @@ begin
 
         end  procedure gen_input;
 
+		---------------------------
+		-- Verification de l'alu --
+		---------------------------
         procedure verif_alu is
-        begin
-            case( mode_sti ) is
 
+			-- variable pour la verification de l'alu
+			variable a_v: std_logic_vector(SIZE downto 0);
+			variable b_v: std_logic_vector(SIZE downto 0);
+			variable s_v: std_logic_vector(SIZE downto 0);
+			variable c_v: std_logic;
+			variable operateur: string (1 to 5);
+
+        begin
+			a_v := '0' & a_sti;
+			b_v := '0' & b_sti;
+
+			-- Calcul des resultats à obtenir
+            case( mode_sti ) is
                 when "000" =>
-                    if (std_logic_vector(s_obs) = std_logic_vector(unsigned(a_sti)+unsigned(b_sti))) then
-                        --logger.log_error("correct");
-                    else
-                        logger.log_error("faux");
-                    end if;
+				s_v := std_logic_vector(unsigned(a_v)+unsigned(b_v));
+				c_v := s_v(SIZE);
+				operateur := "  +  ";
+
+				when "001" =>
+				s_v := std_logic_vector(unsigned(a_v)-unsigned(b_v));
+				c_v := s_v(SIZE);
+				operateur := "  -  ";
+
+				when "010" =>
+				s_v := a_v or b_v;
+				operateur := "  or ";
+
+				when "011" =>
+				s_v := a_v and b_v;
+				operateur := " and ";
+
+				when "100" =>
+				s_v := a_v;
+				operateur := "     ";
+
+				when "101" =>
+				s_v := b_v;
+				operateur := "     ";
+
+				when "110" =>
+				if (a_v = b_v) then
+					s_v(0) := '1';
+				else
+					s_v(0) := '0';
+				end if;
+				operateur := " /=  ";
+
+				when "111" =>
+				s_v := (others => '0');
 
                 when others =>
-                    --logger.log_error("autre");
+                    logger.log_error("autre");
             end case;
+
+			-- Detection des erreurs pour tout les modes sauf "110"
+			if (s_v(SIZE-1 downto 0) /= std_logic_vector(s_obs)) then
+				if(unsigned(mode_sti) < 2) then
+					logger.log_error(integer'image(to_integer(unsigned(a_sti))) & operateur(2 to 4) & integer'image(to_integer(unsigned(b_sti))) & " /= " &  integer'image(to_integer(unsigned(s_obs))));
+				elsif(unsigned(mode_sti) < 4) then
+					logger.log_error(integer'image(to_integer(unsigned(a_sti))) & operateur & integer'image(to_integer(unsigned(b_sti))) & " /= " &  integer'image(to_integer(unsigned(s_obs))));
+				elsif((unsigned(mode_sti) < 6) or (unsigned(mode_sti) = 7)) then
+					logger.log_error(integer'image(to_integer(unsigned(s_obs))) & " /= " &  integer'image(to_integer(unsigned(s_v))));
+				end if;
+			end if;
+
+			-- Detection des erreurs pour le mode "110"
+			if(unsigned(mode_sti) = 6) then
+				if (s_obs(0)/= s_v(0)) then
+					logger.log_error(std_logic'image(s_obs(0)) & " /= " &  std_logic'image(s_v(0)));
+				end if;
+			end if;
+
+			-- Detection des erreurs de retenue
+			if (c_v /= c_obs) then
+				if(unsigned(mode_sti) < 2) then
+					logger.log_error("Retenue:" & std_logic'image((c_obs)) & " /= " & std_logic'image(((c_v))));
+				end if;
+			end if;
+
 
         end  procedure verif_alu;
 
-        procedure Aleatoire_SIZE is
-        --function Aleatoire_SIZE return std_logic_vector is
-            -- 2 seeds pour la génération aléatoire
-            --variable seed1: positive := SEED1;
-            --variable seed2: positive := SEED2;
-            -- valeur aléatoire entre 0 et 1.0
-            --variable rand: real;
-            -- valeur aléatoire entre 0 et 65535
-            --variable int_rand: integer;
-            -- stimulus alétatoire sur 16 bits
-            --variable stim: std_logic_vector(SIZE-1 downto 0);
-
+		----------------------------
+		-- Gestion de l'aleatoire --
+		----------------------------
+        procedure aleatoire_SIZE is
             begin
-                --seed1 := SEED1;
-                --seed2 := SEED2;
                 UNIFORM(seed1, seed2, rand);
                 -- troncature du nombre après changement d'échelle
                 int_rand := INTEGER(TRUNC(rand*real(2**SIZE)));
-                --int_rand := INTEGER(TRUNC(rand*256.0));
                 -- conversion vers std_logic_vector
                 stim := std_logic_vector(to_unsigned(int_rand, stim'LENGTH));
-                --stim := std_logic_vector(to_unsigned(23, stim'LENGTH));
-                --return stim;
-        end Aleatoire_SIZE;
+        end aleatoire_SIZE;
 
     begin
-
-        -- a_sti    <= default_value;
-        -- b_sti    <= default_value;
-        -- mode_sti <= default_value;
-
-        --gen_input("10100101","10101010","000");
-        --wait for 2ns;
-        --verif_alu;
-
-        --wait for 50ns;
-
-        -- Generation de toutes les possibilites
-        for I in 0 to (2**mode_sti'LENGTH)-1 loop
-            for J in 0 to (2**b_sti'LENGTH)-1 loop
-                for K in 0 to (2**a_sti'LENGTH)-1 loop
-                    gen_input(Std_logic_Vector(To_Unsigned(K,a_sti'LENGTH)),Std_logic_Vector(To_Unsigned(J,b_sti'LENGTH)), Std_logic_Vector(To_Unsigned(I,mode_sti'LENGTH)));
-                    wait for 25ns;
-                    verif_alu;
-                    wait for 25ns;
-                end loop;
-            end loop;
-        end loop;
-
-        -- Aleatoire 1000 fois
-        for L in 0 to 10 loop
-            Aleatoire_SIZE;
-            stim1 := stim;
-            Aleatoire_SIZE;
-            stim2 := stim;
-            gen_input(stim1, stim2, "000");
-            wait for 50ns;
-        end loop;
-
-        -- do something
         case TESTCASE is
-            when 0      => -- default testcase
+			-- Generation de toutes les possibilites
+            when 0  =>
+                for I in 0 to (2**mode_sti'LENGTH)-1 loop
+                    for J in 0 to (2**b_sti'LENGTH)-1 loop
+                        for K in 0 to (2**a_sti'LENGTH)-1 loop
+                            gen_input(Std_logic_Vector(To_Unsigned(K,a_sti'LENGTH)),Std_logic_Vector(To_Unsigned(J,b_sti'LENGTH)), Std_logic_Vector(To_Unsigned(I,mode_sti'LENGTH)));
+                            wait for 25ns;
+                            verif_alu;
+                            wait for 25ns;
+                        end loop;
+                    end loop;
+                end loop;
+
+			-- Aleatoire 100 fois pour chaque mode
+            when 1	=>
+				logger.log_error("case1");
+
+				for I in 0 to (2**mode_sti'LENGTH)-1 loop
+					for J in 0 to 100 loop
+						aleatoire_SIZE;
+						stim1 := stim;
+						aleatoire_SIZE;
+						stim2 := stim;
+						gen_input(stim1, stim2, Std_logic_Vector(To_Unsigned(I,mode_sti'LENGTH)));
+						wait for 25 ns;
+						verif_alu;
+						wait for 25 ns;
+					end loop;
+				end loop;
+
+			-- Combinaision de toutes les possibilites et aleatoire
+			when 2	=>
+				logger.log_error("case2");
+
+				-- Generation de toutes les possibilites
+				for I in 0 to (2**mode_sti'LENGTH)-1 loop
+					for J in 0 to (2**b_sti'LENGTH)-1 loop
+						for K in 0 to (2**a_sti'LENGTH)-1 loop
+							gen_input(Std_logic_Vector(To_Unsigned(K,a_sti'LENGTH)),Std_logic_Vector(To_Unsigned(J,b_sti'LENGTH)), Std_logic_Vector(To_Unsigned(I,mode_sti'LENGTH)));
+							wait for 25ns;
+							verif_alu;
+							wait for 25ns;
+						end loop;
+					end loop;
+				end loop;
+
+				-- Aleatoire 100 fois pour chaque mode
+				for I in 0 to (2**mode_sti'LENGTH)-1 loop
+					for J in 0 to 100 loop
+						aleatoire_SIZE;
+						stim1 := stim;
+						aleatoire_SIZE;
+						stim2 := stim;
+						gen_input(stim1, stim2, Std_logic_Vector(To_Unsigned(I,mode_sti'LENGTH)));
+						wait for 25 ns;
+						verif_alu;
+						wait for 25 ns;
+					end loop;
+				end loop;
+
             when others => report "Unsupported testcase : "
                                   & integer'image(TESTCASE)
                                   severity error;

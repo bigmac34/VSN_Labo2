@@ -37,9 +37,9 @@ proc compile_tb { } {
 proc sim_start {TESTCASE SIZE ERRNO} {
 
   #vsim -t 1ns -novopt -GSIZE=$SIZE -GERRNO=$ERRNO -GTESTCASE=$TESTCASE work.alu_tb
- vsim -t 1ns -novopt -GSIZE=$SIZE -GERRNO=$ERRNO -GTESTCASE=$TESTCASE project_lib.alu_tb
-#  do wave.do
-#  add wave -r *
+ 	vsim -t 1ns -novopt -GSIZE=$SIZE -GERRNO=$ERRNO -GTESTCASE=$TESTCASE project_lib.alu_tb
+#  	do wave.do
+#  	add wave -r *
     add wave -expand -group Stimuli *_sti
     add wave -expand -group Observe *_obs
     add wave -expand -group Signals *_s
@@ -70,6 +70,7 @@ global Path_DUV
 global Path_TB
 
 # start of sequence -------------------------------------------------
+# Pour lancer vsim -do sim.do sim_start 8 0
 
 if {$argc>0} {
   if {[string compare $1 "all"] == 0} {
@@ -79,7 +80,7 @@ if {$argc>0} {
   } elseif {[string compare $1 "comp_tb"] == 0} {
     compile_tb
   } elseif {[string compare $1 "sim"] == 0} {
-    sim_start 0 $2
+    sim_start 0 $2 $3
   }
 
 } else {
