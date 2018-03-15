@@ -27,6 +27,8 @@ proc compile_tb { } {
   vcom -work project_lib -2008 $Path_TB/project_logger_pkg.vhd
   vcom -work project_lib -2008 $Path_TB/project_ctx.vhd
 
+  vcom -work project_lib -2008 $Path_DUV/alu.vhd
+
   vcom -work project_lib -2008 $Path_TB/alu_tb.vhd
 
 }
