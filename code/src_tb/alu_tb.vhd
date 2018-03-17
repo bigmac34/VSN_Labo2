@@ -1,36 +1,32 @@
 -------------------------------------------------------------------------------
--- HEIG-VD
--- Haute Ecole d'Ingenerie et de Gestion du Canton de Vaud
--- School of Business and Engineering in Canton de Vaud
+-- HES-SO Master
 -------------------------------------------------------------------------------
--- REDS Institute
--- Reconfigurable Embedded Digital Systems
+-- Cours VSN
 --------------------------------------------------------------------------------
 --
 -- File     : alu_tb.vhd
--- Author   : TbGenerator
--- Date     : 08.03.2018
+-- Author   : Jérémie Macchi
+-- Date     : 17.03.2018
 --
 -- Context  :
 --
 --------------------------------------------------------------------------------
--- Description : This module is a simple VHDL testbench.
---               It instanciates the DUV and proposes a TESTCASE generic to
---               select which test to start.
+-- Description : testbench pour la verification d'une alu
 --
 --------------------------------------------------------------------------------
 -- Dependencies : -
 --
 --------------------------------------------------------------------------------
 -- Modifications :
--- Ver   Date        Person     Comments
--- 0.1   08.03.2018  TbGen      Initial version
----------------------------------------------------------------------------------
+-- Ver   Date        	Person     		Comments
+-- 0.1   08.03.2018  	TbGen      		Initial version
+-- 1.0	 08.03.2012		Jérémie Macchi	Labo 2 de VSN
+--------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use ieee.math_real.all; -- Pour l'aleatoire
+use ieee.math_real.all; -- Lib. pour l'aleatoire
 
 library project_lib;
 context project_lib.project_ctx;
@@ -49,14 +45,20 @@ end alu_tb;
 
 architecture testbench of alu_tb is
 
+	-------------
+	-- Siganux --
+	-------------
     signal a_sti    : std_logic_vector(SIZE-1 downto 0);
     signal b_sti    : std_logic_vector(SIZE-1 downto 0);
     signal s_obs    : std_logic_vector(SIZE-1 downto 0);
     signal c_obs    : std_logic;
     signal mode_sti : std_logic_vector(2 downto 0);
-
     signal sim_end_s : boolean := false;
+	signal sim_synchro_s : boolean := false;
 
+	-------------------
+	-- Composant alu --
+	-------------------
     component alu is
     generic (
         SIZE  : integer := 8;
@@ -73,6 +75,9 @@ architecture testbench of alu_tb is
 
 begin
 
+	------------------------
+	-- Mapping avec l'alu --
+	------------------------
     duv : alu
     generic map (
         SIZE  => SIZE,
@@ -86,10 +91,10 @@ begin
         mode_i => mode_sti
     );
 
-
     stimulus_proc: process is
-
-        -- Pour l'aleatoire
+		--------------------------------
+        -- Variables pour l'aleatoire --
+		--------------------------------
         variable seed1: positive := C_SEED1;
         variable seed2: positive := C_SEED2;
         variable rand: real;
@@ -98,8 +103,9 @@ begin
         variable stim1: std_logic_vector(SIZE-1 downto 0);
         variable stim2: std_logic_vector(SIZE-1 downto 0);
 
-
-        -- Add input generator
+		----------------------------------------------
+        -- Procedure pour la generation des signaux --
+		----------------------------------------------
         procedure gen_input(a : in std_logic_vector(SIZE-1 downto 0);
                             b : in std_logic_vector(SIZE-1 downto 0);
                             mode : in std_logic_vector(2 downto 0)) is
@@ -110,25 +116,126 @@ begin
 
         end  procedure gen_input;
 
-		---------------------------
-		-- Verification de l'alu --
-		---------------------------
-        procedure verif_alu is
+		----------------------------------------------
+		-- Procedure pour la gestion de l'aleatoire --
+		----------------------------------------------
+        procedure aleatoire_SIZE is
+            begin
+                UNIFORM(seed1, seed2, rand);
+                -- troncature du nombre après changement d'échelle
+                int_rand := INTEGER(TRUNC(rand*real(2**SIZE)));
+                -- conversion vers std_logic_vector
+                stim := std_logic_vector(to_unsigned(int_rand, stim'LENGTH));
+        end aleatoire_SIZE;
 
-			-- variable pour la verification de l'alu
-			variable a_v: std_logic_vector(SIZE downto 0);
-			variable b_v: std_logic_vector(SIZE downto 0);
-			variable s_v: std_logic_vector(SIZE downto 0);
-			variable c_v: std_logic;
-			variable operateur: string (1 to 5);
+	-------------------------------------
+	-- Partie principale du test bench --
+	-------------------------------------
+    begin
+		-- TESTCASE choisi lors de la compilation
+        case TESTCASE is
+			-- Generation de toutes les possibilites
+            when 0  =>
+                for I in 0 to (2**mode_sti'LENGTH)-1 loop
+                    for J in 0 to (2**b_sti'LENGTH)-1 loop
+                        for K in 0 to (2**a_sti'LENGTH)-1 loop
+                            gen_input(Std_logic_Vector(To_Unsigned(K,a_sti'LENGTH)),Std_logic_Vector(To_Unsigned(J,b_sti'LENGTH)), Std_logic_Vector(To_Unsigned(I,mode_sti'LENGTH)));
+                            wait for 25 ns;
+							sim_synchro_s <= true,
+											false after 1 ns;
+                            wait for 24 ns;
+                        end loop;
+                    end loop;
+                end loop;
 
-        begin
+			-- Aleatoire 100 fois pour chaque mode
+            when 1	=>
+				for I in 0 to (2**mode_sti'LENGTH)-1 loop
+					for J in 0 to 100 loop
+						aleatoire_SIZE;
+						stim1 := stim;
+						aleatoire_SIZE;
+						stim2 := stim;
+						gen_input(stim1, stim2, Std_logic_Vector(To_Unsigned(I,mode_sti'LENGTH)));
+						wait for 25 ns;
+						sim_synchro_s <= true,
+										false after 1 ns;
+						wait for 24 ns;
+					end loop;
+				end loop;
+
+			-- Combinaision de toutes les possibilites et de l'aleatoire
+			when 2	=>
+				-- Generation de toutes les possibilites
+				for I in 0 to (2**mode_sti'LENGTH)-1 loop
+					for J in 0 to (2**b_sti'LENGTH)-1 loop
+						for K in 0 to (2**a_sti'LENGTH)-1 loop
+							gen_input(Std_logic_Vector(To_Unsigned(K,a_sti'LENGTH)),Std_logic_Vector(To_Unsigned(J,b_sti'LENGTH)), Std_logic_Vector(To_Unsigned(I,mode_sti'LENGTH)));
+							wait for 25 ns;
+							sim_synchro_s <= true,
+											false after 1 ns;
+							wait for 24 ns;
+						end loop;
+					end loop;
+				end loop;
+
+				-- Aleatoire 100 fois pour chaque mode
+				for I in 0 to (2**mode_sti'LENGTH)-1 loop
+					for J in 0 to 100 loop
+						aleatoire_SIZE;
+						stim1 := stim;
+						aleatoire_SIZE;
+						stim2 := stim;
+						gen_input(stim1, stim2, Std_logic_Vector(To_Unsigned(I,mode_sti'LENGTH)));
+						wait for 25 ns;
+						sim_synchro_s <= true,
+										false after 1 ns;
+						wait for 24 ns;
+					end loop;
+				end loop;
+
+            when others => report "Unsupported testcase : "
+                                  & integer'image(TESTCASE)
+                                  severity error;
+        end case;
+
+        -- end of simulation
+        sim_end_s <= true;
+
+        -- stop the process
+        wait;
+
+    end process; -- stimulus_proc
+
+
+	--------------------------------
+	-- Processus de vérification --
+	-------------------------------
+	process
+
+	-- Variables pour la verification de l'alu
+	variable a_v: std_logic_vector(SIZE downto 0);
+	variable b_v: std_logic_vector(SIZE downto 0);
+	variable s_v: std_logic_vector(SIZE downto 0);
+	variable c_v: std_logic;
+	variable operateur: string (1 to 5);
+
+	--------------------------------
+	-- Processus de vérification --
+	-------------------------------
+	begin
+
+		while not sim_end_s loop
+			wait until rising_edge(sim_synchro_s) or sim_end_s;
+			-- Initialisation
 			a_v := '0' & a_sti;
 			b_v := '0' & b_sti;
 
-			-- Calcul des resultats à obtenir
-            case( mode_sti ) is
-                when "000" =>
+			------------------------------------------------
+			-- Calcul des resultats en fonction des modes --
+			------------------------------------------------
+			case( mode_sti ) is
+				when "000" =>
 				s_v := std_logic_vector(unsigned(a_v)+unsigned(b_v));
 				c_v := s_v(SIZE);
 				operateur := "  +  ";
@@ -165,9 +272,9 @@ begin
 				when "111" =>
 				s_v := (others => '0');
 
-                when others =>
-                    logger.log_error("autre");
-            end case;
+				when others =>
+					logger.log_error("autre");
+			end case;
 
 			-- Detection des erreurs pour tout les modes sauf "110"
 			if (s_v(SIZE-1 downto 0) /= std_logic_vector(s_obs)) then
@@ -189,99 +296,14 @@ begin
 
 			-- Detection des erreurs de retenue
 			if (c_v /= c_obs) then
+				-- Que pour les modes "000" et "001"
 				if(unsigned(mode_sti) < 2) then
 					logger.log_error("Retenue:" & std_logic'image((c_obs)) & " /= " & std_logic'image(((c_v))));
 				end if;
 			end if;
-
-
-        end  procedure verif_alu;
-
-		----------------------------
-		-- Gestion de l'aleatoire --
-		----------------------------
-        procedure aleatoire_SIZE is
-            begin
-                UNIFORM(seed1, seed2, rand);
-                -- troncature du nombre après changement d'échelle
-                int_rand := INTEGER(TRUNC(rand*real(2**SIZE)));
-                -- conversion vers std_logic_vector
-                stim := std_logic_vector(to_unsigned(int_rand, stim'LENGTH));
-        end aleatoire_SIZE;
-
-    begin
-        case TESTCASE is
-			-- Generation de toutes les possibilites
-            when 0  =>
-                for I in 0 to (2**mode_sti'LENGTH)-1 loop
-                    for J in 0 to (2**b_sti'LENGTH)-1 loop
-                        for K in 0 to (2**a_sti'LENGTH)-1 loop
-                            gen_input(Std_logic_Vector(To_Unsigned(K,a_sti'LENGTH)),Std_logic_Vector(To_Unsigned(J,b_sti'LENGTH)), Std_logic_Vector(To_Unsigned(I,mode_sti'LENGTH)));
-                            wait for 25ns;
-                            verif_alu;
-                            wait for 25ns;
-                        end loop;
-                    end loop;
-                end loop;
-
-			-- Aleatoire 100 fois pour chaque mode
-            when 1	=>
-				logger.log_error("case1");
-
-				for I in 0 to (2**mode_sti'LENGTH)-1 loop
-					for J in 0 to 100 loop
-						aleatoire_SIZE;
-						stim1 := stim;
-						aleatoire_SIZE;
-						stim2 := stim;
-						gen_input(stim1, stim2, Std_logic_Vector(To_Unsigned(I,mode_sti'LENGTH)));
-						wait for 25 ns;
-						verif_alu;
-						wait for 25 ns;
-					end loop;
-				end loop;
-
-			-- Combinaision de toutes les possibilites et aleatoire
-			when 2	=>
-				logger.log_error("case2");
-
-				-- Generation de toutes les possibilites
-				for I in 0 to (2**mode_sti'LENGTH)-1 loop
-					for J in 0 to (2**b_sti'LENGTH)-1 loop
-						for K in 0 to (2**a_sti'LENGTH)-1 loop
-							gen_input(Std_logic_Vector(To_Unsigned(K,a_sti'LENGTH)),Std_logic_Vector(To_Unsigned(J,b_sti'LENGTH)), Std_logic_Vector(To_Unsigned(I,mode_sti'LENGTH)));
-							wait for 25ns;
-							verif_alu;
-							wait for 25ns;
-						end loop;
-					end loop;
-				end loop;
-
-				-- Aleatoire 100 fois pour chaque mode
-				for I in 0 to (2**mode_sti'LENGTH)-1 loop
-					for J in 0 to 100 loop
-						aleatoire_SIZE;
-						stim1 := stim;
-						aleatoire_SIZE;
-						stim2 := stim;
-						gen_input(stim1, stim2, Std_logic_Vector(To_Unsigned(I,mode_sti'LENGTH)));
-						wait for 25 ns;
-						verif_alu;
-						wait for 25 ns;
-					end loop;
-				end loop;
-
-            when others => report "Unsupported testcase : "
-                                  & integer'image(TESTCASE)
-                                  severity error;
-        end case;
-
-        -- end of simulation
-        sim_end_s <= true;
-
-        -- stop the process
-        wait;
-
-    end process; -- stimulus_proc
+		end loop;
+		-- stop the process
+		wait;
+	end process;
 
 end testbench;
